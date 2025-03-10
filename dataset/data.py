@@ -5,8 +5,8 @@ import copy
 
 def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0, request_scale=1.0):
     """
-    Generate timestamps for ShareGPT conversations using Poisson distributions.
-    
+    Generate timestamps for ShareGPT conversations
+
     Args:
         data: The parsed JSON data
         session_lambda: Lambda parameter for inter-session arrival times (average rate of sessions)
@@ -16,20 +16,16 @@ def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0,
         request_scale: Scaling factor for inter-request times
             Scaling factor to adjust poisson generated intervals - adjust the overall time between requests
             without changing distribution
-    
-    Returns:
-        Modified data with timestamps added
     """
     timestamped_data = copy.deepcopy(data)
     current_time = 0
     
     for session_idx, session in enumerate(timestamped_data):
-        # Generate session start time (except for the first session)
+        # sample random from session poisson
         if session_idx > 0:
             session_interval = np.random.poisson(session_lambda) * session_scale
             current_time += session_interval
         
-        # Add session timestamp
         session_start_time = current_time
         session["session_start_time"] = session_start_time
         
@@ -37,12 +33,11 @@ def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0,
         message_time = session_start_time
         
         for msg_idx, msg in enumerate(session.get("conversations", [])):
-            # Generate message timestamp (except for first message in session)
             if msg_idx > 0:
+                # sample random from request poisson
                 msg_interval = np.random.poisson(request_lambda) * request_scale
                 message_time += msg_interval
             
-            # Add timestamp to message
             msg["timestamp"] = message_time
     
     return timestamped_data

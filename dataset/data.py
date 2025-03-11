@@ -33,12 +33,17 @@ def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0,
         message_time = session_start_time
         
         for msg_idx, msg in enumerate(session.get("conversations", [])):
-            if msg_idx > 0:
-                # sample random from request poisson
-                msg_interval = np.random.poisson(request_lambda) * request_scale
-                message_time += msg_interval
-            
-            msg["timestamp"] = message_time
+            # Only generate new timestamp for human messages
+            if msg.get("from") == "human":
+                if msg_idx > 0:
+                    # sample random from request poisson
+                    msg_interval = np.random.poisson(request_lambda) * request_scale
+                    message_time += msg_interval
+                
+                msg["timestamp"] = message_time
+            # GPT messages get the same timestamp as the previous human message
+            elif msg.get("from") == "gpt":
+                msg["timestamp"] = message_time
     
     return timestamped_data
 

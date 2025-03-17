@@ -11,7 +11,7 @@ def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0,
         data: The parsed JSON data
         session_lambda: Lambda parameter for inter-session arrival times (average rate of sessions)
         request_lambda: Lambda parameter for inter-request arrival times (average rate of requests)
-            LAMBDA: number of events in a fixed interval
+            LAMBDA: average events per unit time
         session_scale: Scaling factor for inter-session times
         request_scale: Scaling factor for inter-request times
             Scaling factor to adjust poisson generated intervals - adjust the overall time between requests
@@ -23,7 +23,7 @@ def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0,
     for session_idx, session in enumerate(timestamped_data):
         # sample random from session poisson
         if session_idx > 0:
-            session_interval = np.random.poisson(session_lambda) * session_scale
+            session_interval = np.random.exponential(1.0 / session_lambda) * session_scale
             current_time += session_interval
         
         session_start_time = current_time
@@ -37,7 +37,7 @@ def generate_timestamps(data, session_lambda, request_lambda, session_scale=1.0,
             if msg.get("from") == "human":
                 if msg_idx > 0:
                     # sample random from request poisson
-                    msg_interval = np.random.poisson(request_lambda) * request_scale
+                    msg_interval = np.random.exponential(1.0 / request_lambda) * request_scale
                     message_time += msg_interval
                 
                 msg["timestamp"] = message_time
